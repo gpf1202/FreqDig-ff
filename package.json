@@ -1,0 +1,50 @@
+{
+  "name": "freqdig",
+  "version": "0.0.6",
+  "description": "FreqDig open-source frequency response, distortion, and group delay analysis tool.",
+  "private": true,
+  "author": "Diggercat",
+  "license": "MIT",
+  "type": "module",
+  "main": "electron-main.cjs",
+  "scripts": {
+    "start": "node scripts/static-server.mjs 8000",
+    "serve": "node scripts/static-server.mjs",
+    "desktop": "electron .",
+    "build:win": "electron-builder --win nsis",
+    "test:chart-settings": "node scripts/test-chart-settings.mjs",
+    "test:workflow": "node scripts/test-workflow.mjs",
+    "test:workspace": "node scripts/test-workspace.mjs",
+    "test:desktop": "electron scripts/test-desktop.cjs",
+    "test:curve-management": "node scripts/test-curve-management.mjs"
+  },
+  "devDependencies": {
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.19"
+  },
+  "build": {
+    "appId": "com.freqdig.desktop",
+    "productName": "FreqDig",
+    "asar": true,
+    "files": [
+      "index.html",
+      "app.js",
+      "styles.css",
+      "assets/**/*",
+      "examples/**/*",
+      "src/**/*",
+      "electron-main.cjs",
+      "electron-preload.cjs"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false
+    }
+  }
+}

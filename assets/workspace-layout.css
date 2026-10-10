@@ -1,0 +1,64 @@
+/* File operations above; curve management left; plotting centre; export in its own workspace. */
+.app { grid-template-rows: auto minmax(0,1fr) auto; }
+header { height: auto; min-height: 96px; max-height: none; gap: 20px; padding-block: 10px; }
+.brand-group { flex-wrap: wrap; width: 190px; max-width: 190px; min-width: 0; flex: 0 0 190px; gap: 8px; }
+.project-info { width: 100%; min-width: 0; display: grid; gap: 3px; }
+.project-info input { border: 1px solid var(--line); border-radius: 5px; width: 100%; min-width: 0; padding: 4px 7px; font-size: 12px; background: var(--panel); color: var(--ink); }
+.project-dirty-status { font-size: 10px; color: var(--muted); }
+.toolbar { min-width: 0; flex: 1; }
+.toolbar-row { justify-content: flex-end; flex-wrap: wrap; width: 100%; }
+.file-toolbar button, .file-toolbar .file-button { white-space: nowrap; }
+.chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.original-compare-button { white-space: nowrap; font-size: 12px; padding: 6px 10px; touch-action: none; }
+.original-compare-button:active { background: var(--accent-soft); color: var(--accent); }
+.curve-management { display: grid; gap: 8px; margin-bottom: 12px; }
+.sidebar-tabs { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.sidebar-tabs button { font-size: 11px; padding-inline: 3px; }
+.curve-management > .settings-help { display: none; }
+.curve-management > input, .curve-management > select, .curve-management details > input, .curve-management details > select { width: 100%; min-width: 0; padding: 7px; }
+.curve-management details, .alignment-lock-panel { border: 1px solid var(--line); padding: 9px; border-radius: 8px; font-size: 12px; }
+.curve-management summary, .alignment-lock-panel summary { cursor: pointer; padding: 3px 0; }
+.curve-management details[open] > *, .alignment-lock-panel[open] > * { margin-block: 5px; }
+.alignment-lock-panel { margin-bottom: 12px; }
+.alignment-lock-panel select, .alignment-lock-panel input[type=number] { width: 100%; min-width: 0; padding: 6px; }
+.alignment-lock-panel label { display: flex; align-items: center; gap: 6px; }
+#smoothingControls { display: grid; gap: 8px; }
+#smoothingControls > select { width: 100%; min-width: 0; }
+#smoothingControls > label { font-size: 11px; border: 0; background: transparent; padding: 0; min-height: 22px; }
+.curve-processing-group { border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin-bottom: 12px; font-size: 12px; }
+.curve-processing-group > summary { cursor: pointer; padding: 3px 0; }
+.curve-processing-group .processing-settings { border: 0; margin: 0; padding: 0; }
+.curve-processing-group .processing-settings > summary { display: none; }
+.curve-processing-group .alignment-lock-panel { margin-top: 8px; }
+.curve-item[data-curve-id] { grid-template-columns: 12px 20px 14px minmax(0,1fr) 30px 30px; gap: 7px; padding: 10px; }
+.curve-drag-handle { cursor: grab; color: var(--muted); user-select: none; font-size: 18px; }
+.curve-details { grid-column: 1/-1; min-width: 0; font-size: 12px; }
+.curve-details summary { color: var(--muted); padding: 5px 0; cursor: pointer; }
+.curve-details > .curve-options { margin: 7px 0; }
+.curve-details > .legend-name-field { display: flex; gap: 6px; margin-top: 6px; }
+.curve-details input { min-width: 0; }
+.curve-order-actions { display: flex; gap: 8px; margin-top: 8px; }
+.curve-order-actions button { font-size: 11px; padding: 3px 8px; }
+.curve-group-title { font-weight: 600; border-left: 3px solid var(--accent); padding: 4px 8px; font-size: 12px; margin-top: 8px; }
+.curve-item[hidden], .curve-group-title[hidden], .curve-management[hidden], .alignment-lock-panel[hidden], .curve-processing-group[hidden] { display: none !important; }
+.chart-settings-panel { padding: 10px; }
+.legend-settings-panel > .sidebar-control { margin-block: 8px; padding: 8px; }
+.export-workspace-dialog { width: min(1360px,calc(100vw - 36px)); padding: 18px; }
+.export-workspace-body { display: grid; grid-template-columns: 300px minmax(0,1fr); gap: 20px; max-height: calc(100vh - 130px); }
+.export-settings-column { display: flex; flex-direction: column; gap: 6px; padding-right: 12px; overflow: auto; border-right: 1px solid var(--line); }
+.export-settings-column > button { width: 100%; margin: 0; font-size: 13px; }
+.export-settings-column select, .export-settings-column input:not([type=checkbox]) { max-width: 100%; min-width: 0; }
+.export-settings-column .export-section-title { font-weight: 600; font-size: 13px; padding-top: 12px; border-top: 1px solid var(--line); }
+.export-settings-column .toolbar-menu-check { display: flex; gap: 9px; align-items: center; padding: 4px; font-size: 13px; }
+.export-preview-column { min-width: 0; overflow: auto; }
+.export-preview-column > .workspace-field { grid-template-columns: 80px 170px; align-items: center; margin-top: 0; }
+.export-preview-stage { max-height: 62vh; min-height: 180px; }
+.export-preview-stage img { max-width: none; }
+.export-layout-report p { margin: 5px 0; font-size: 12px; color: var(--muted); }
+.export-layout-report.has-issues p { color: #a56200; }
+.export-custom-size, .save-size-preset { gap: 8px; padding: 5px; }
+.duplicate-import-dialog { max-width: 600px; }
+@media (max-width: 1200px) and (min-width:641px) { header { gap: 10px; } .brand-group { width: 165px; flex-basis: 165px; } .toolbar { max-width: none; } .toolbar-row { gap: 5px; } }
+@media (max-width: 1000px) { .app { grid-template-rows: auto 1fr auto; } }
+@media (max-width: 800px) { .export-workspace-body { grid-template-columns: 250px minmax(0,1fr); gap: 10px; } .export-workspace-dialog { padding: 12px; } }
+@media (max-width:640px) { .brand-group { width: auto; flex-basis: auto; } .project-info { max-width: 180px; } .export-workspace-body { grid-template-columns: 1fr; overflow: auto; } .export-settings-column { border-right: none; max-height: 40vh; } .original-compare-button { font-size: 10px; } }

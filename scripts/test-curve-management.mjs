@@ -1,0 +1,15 @@
+import assert from "node:assert/strict";
+import { stripFileSuffix, assignPalette, reorderCurve, filterCurves, normalizedAlignmentLock } from "../src/curveManagement.js";
+import { WorkspaceHistory } from "../src/workspaceTools.js";
+assert.equal(stripFileSuffix("耳机A.TXT"), "耳机A"); assert.equal(stripFileSuffix("耳机.csv"), "耳机"); assert.equal(stripFileSuffix("version.1"), "version.1");
+const curves=[{id:"a",name:"A.txt",group:"左右"},{id:"b",name:"B.csv",group:"左右"},{id:"c",name:"C.txt",group:""}];
+assert.equal(filterCurves(curves,"左右").length,2);assert.equal(filterCurves(curves,""," ").length,0);assert.equal(filterCurves(curves,"","").length,1);
+assert(reorderCurve(curves,"a","c"));assert.deepEqual(curves.map(c=>c.id),["b","c","a"]);assert(!reorderCurve(curves,"missing","a"));
+assignPalette(curves,"print");assert(curves[1].dash.length>0);assert(curves.every(c=>/^#[0-9a-f]{6}$/i.test(c.color)));
+assert.equal(normalizedAlignmentLock({enabled:true,referenceId:"missing",frequency:99999},curves).enabled,false);
+assert.equal(normalizedAlignmentLock({enabled:true,referenceId:"a",frequency:1000},curves).enabled,true);
+const data=Array.from({length:2000},(_,i)=>({frequency:20+i,level:80+i/100}));
+const history=new WorkspaceHistory();for(let i=0;i<35;i++)history.record({curves:[{id:"a",offsetDb:i,data}]});
+assert.equal(history.pool.size,1);const old=history.undo();assert.equal(old.curves[0].offsetDb,33);assert.equal(history.record(old),false);assert(history.canRedo);
+const copy=JSON.parse(JSON.stringify(old));assert.equal(history.record(copy),false);assert(history.canRedo);
+console.log("PASS: suffixes, groups, search, ordering, palettes, locked-reference validation; 35 edits share one immutable dataset and restored copies retain redo.");

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<!--
+  FreqDig
+  Copyright (c) 2026 Diggercat
+  SPDX-License-Identifier: MIT
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreqDig</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="assets/app-layout.css">
+  <link rel="stylesheet" href="assets/workspace-layout.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <svg class="liquid-glass-defs" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="freqdig-liquid-glass-filter" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.012 0.028" numOctaves="2" seed="7" result="glassNoise"/>
+        <feDisplacementMap in="SourceGraphic" in2="glassNoise" scale="14" xChannelSelector="R" yChannelSelector="G" result="glassDistortion"/>
+        <feGaussianBlur in="glassDistortion" stdDeviation="0.18"/>
+      </filter>
+    </defs>
+  </svg>
+  <dialog id="batchExportDialog" class="batch-export-dialog"><h2>分别导出曲线</h2><p id="batchExportProgress" role="status">准备图片…</p><progress id="batchExportProgressBar" max="1" value="0"></progress><button id="cancelBatchExport" type="button">取消导出</button></dialog>
+  <div class="app">
+    <div data-night-scene></div>
+    <header>
+      <div class="brand-group">
+        <h1>FreqDig</h1>
+        <button id="themeToggle" class="theme-toggle" type="button" title="切换暗色模式" aria-label="切换暗色模式" aria-pressed="false">
+          <span class="theme-toggle__track" aria-hidden="true">
+            <span class="theme-toggle__sky"></span>
+            <span class="theme-toggle__star theme-toggle__star--one"></span>
+            <span class="theme-toggle__star theme-toggle__star--two"></span>
+            <span class="theme-toggle__star theme-toggle__star--three"></span>
+            <span class="theme-toggle__orb">
+              <span class="theme-toggle__moon-mark theme-toggle__moon-mark--one"></span>
+              <span class="theme-toggle__moon-mark theme-toggle__moon-mark--two"></span>
+            </span>
+          </span>
+        </button>
+      </div>
+      <button id="mobileMenuToggle" class="mobile-menu-toggle" type="button" aria-label="打开工具菜单" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="toolbar">
+        <div class="toolbar-row file-toolbar" aria-label="文件与导出">
+        <label class="file-button primary">
+          导入曲线
+          <input id="curveFiles" type="file" accept=".csv,.txt,.frd,.dat,.mdat" multiple>
+        </label>
+        <label class="file-button">
+          导入目标
+          <input id="targetFile" type="file" accept=".csv,.txt,.frd,.dat,.mdat">
+        </label>
+        <button id="saveProject" type="button" title="保存曲线、显示设置和预设为工程文件">保存工程</button>
+        <label class="file-button">打开工程<input id="projectFile" type="file" accept=".json,application/json"></label>
+        <button id="loadDemo" class="quiet-button" type="button">示例数据</button>
+        <div class="toolbar-menu">
+          <button id="toolbarMenuToggle" class="toolbar-menu-toggle" type="button" aria-label="打开图片导出设置" aria-haspopup="true" aria-expanded="false">
+            导出图片
+            <span aria-hidden="true"></span>
+          </button>
+          <div class="toolbar-menu-panel" role="menu" aria-labelledby="toolbarMenuToggle">
+            <label class="toolbar-menu-check"><input id="exportBackground" type="checkbox" checked><span>背景（取消为透明）</span></label>
+            <label class="toolbar-menu-check"><input id="exportCurves" type="checkbox" checked><span>曲线（含相位）</span></label>
+            <label class="toolbar-menu-check"><input id="exportLegend" type="checkbox" checked><span>图例</span></label>
+            <label class="toolbar-menu-check"><input id="exportAxes" type="checkbox" checked><span>坐标轴（刻度与边框）</span></label>
+            <label class="toolbar-menu-check"><input id="exportGrid" type="checkbox" checked><span>网格（含零位参考线）</span></label>
+            <label class="toolbar-menu-check"><input id="exportBands" type="checkbox" checked><span>频带（背景与标签）</span></label>
+            <label class="export-resolution-field"><span>导出尺寸（含概要）</span>
+              <select id="exportResolution" aria-label="导出尺寸"><option value="original">当前尺寸</option><option value="1080p">1080p · 1920 × 1080</option><option value="2k">2K · 2560 × 1440</option><option value="4k">4K · 3840 × 2160</option><option value="custom">自定义</option></select>
+            </label>
+            <div id="customExportSize" class="export-custom-size" hidden>
+              <label>宽（px）<input id="exportWidth" type="number" min="320" max="8192" step="1" value="1920"></label>
+              <label>高（px）<input id="exportHeight" type="number" min="320" max="8192" step="1" value="1080"></label>
+            </div>
+            <div id="saveSizePresetFields" class="save-size-preset" hidden>
+              <label>尺寸预设名称<input id="sizePresetName" maxlength="64" placeholder="例如：论文插图"></label>
+              <button id="saveSizePreset" type="button" data-keep-menu-open>保存为独立尺寸选项</button>
+            </div>
+            <button id="deleteSizePreset" type="button" data-keep-menu-open hidden>删除此尺寸预设</button>
+            <div class="export-section-title">当前图表</div>
+            <button id="exportPng" type="button" role="menuitem">导出 PNG</button>
+            <button id="exportTransparentPng" type="button" role="menuitem">导出透明 PNG</button>
+            <button id="exportSvg" type="button" role="menuitem">导出 SVG</button>
+            <div class="export-section-title">分别导出所有曲线</div>
+            <label class="export-resolution-field"><span>批量图片格式</span><select id="batchExportFormat"><option value="png">PNG</option><option value="svg">SVG</option></select></label>
+            <label class="toolbar-menu-check"><input id="batchIncludeTarget" type="checkbox"><span>同时分别导出目标曲线</span></label>
+            <label class="export-resolution-field"><span>批量保存方式</span><select id="batchOutputMode"><option value="zip">ZIP 压缩包</option><option value="direct">直接保存独立图片</option></select></label>
+            <button id="exportAllCurves" type="button">开始逐条导出</button>
+            <p class="settings-help">频响图：包含已隐藏的导入曲线；每条单独成图，沿用统一坐标和导出设置。</p>
+            <label class="toolbar-menu-check" title="导出时在图表下方附加偏差概要">
+              <input id="exportDeviationSummary" type="checkbox">
+              <span>导出偏差概要</span>
+            </label>
+            <p id="exportSettingsStatus" class="settings-status" role="status"></p>
+          </div>
+        </div>
+        </div>
+        <div class="toolbar-row analysis-toolbar" aria-label="图表分析">
+        <select id="mode">
+          <option value="raw">原始曲线</option>
+          <option value="reference">相对基准差异</option>
+          <option value="target">相对目标偏差</option>
+        </select>
+        <select id="reference"></select>
+        <select id="distortionAnalysisRange" class="distortion-analysis-range" aria-label="失真分析计算范围" hidden>
+          <option value="full">全频段 20-2w</option>
+          <option value="trusted">可信频段 100-2k</option>
+          <option value="trusted-wide">可信宽频 100-10k</option>
+          <option value="sub-low">超低频 20-60</option>
+          <option value="low">低频 60-300</option>
+          <option value="ultra-high">超高频 10k-20k</option>
+        </select>
+        <div id="analysisModeSwitch" class="analysis-mode-switch" role="tablist" aria-label="分析模式">
+          <button type="button" data-analysis-view="frequency" role="tab" aria-selected="true">频响</button>
+          <button type="button" data-analysis-view="distortion" role="tab" aria-selected="false">失真</button>
+          <button type="button" data-analysis-view="groupDelay" role="tab" aria-selected="false">群延迟</button>
+        </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <aside>
+        <div class="sidebar-heading"><p class="panel-title">曲线</p>
+          <div class="sidebar-tabs" role="tablist" aria-label="设置分类"><button type="button" id="curvesTab" data-sidebar-tab="curves" role="tab" aria-controls="curvesPanel" aria-selected="true">曲线处理</button><button type="button" id="chartTab" data-sidebar-tab="chart" role="tab" aria-controls="chartSettingsPanel" aria-selected="false">图表设置</button></div>
+        </div>
+        <div id="curvesPanel" role="tabpanel" aria-labelledby="curvesTab">
+          <div id="smoothingControls" class="smoothing-controls"><span class="settings-caption">统一平滑</span><select id="smoothingScope" aria-label="平滑应用范围"><option value="all">全部导入曲线</option><option value="selected">仅选中曲线</option></select><div class="smoothing-row">            <button id="globalSmoothing" class="smoothing-action" type="button" title="应用到指定范围" aria-label="应用平滑">
+              一键平滑
+            </button>
+            <select id="globalSmoothingLevel" class="smoothing-level" aria-label="平滑程度" title="平滑程度">
+              <option value="0">关闭平滑</option><option value="0.020833333333333332">1/48</option>
+              <option value="0.041666666666666664" selected>1/24</option>
+              <option value="0.08333333333333333">1/12</option>
+              <option value="0.16666666666666666">1/6</option>
+              <option value="0.3333333333333333">1/3</option>
+              <option value="0.5">1/2</option>
+              <option value="1">1/1</option>
+            </select>
+</div><label class="compact-check"><input id="smoothTarget" type="checkbox">包含目标曲线</label><label class="compact-check"><input id="smoothFuture" type="checkbox">新导入曲线沿用此平滑</label></div>
+          <details class="processing-settings"><summary>斜率、对齐与归一化</summary>        <div class="sidebar-control">
+          <label for="tiltInput">斜率</label>
+          <div class="tilt-control">
+            <div class="tilt-presets" aria-label="斜率预设">
+              <button type="button" data-tilt="-4">-4</button>
+              <button type="button" data-tilt="-1">-1</button>
+              <button type="button" data-tilt="0">0</button>
+              <button type="button" data-tilt="1">+1</button>
+              <button type="button" data-tilt="4">+4</button>
+            </div>
+            <div class="number-field">
+              <button id="tiltDown" class="step-button" type="button" aria-label="减小斜率">-</button>
+              <input id="tiltInput" type="number" value="0" step="0.1" inputmode="decimal">
+              <button id="tiltUp" class="step-button" type="button" aria-label="增大斜率">+</button>
+              <span>dB/oct</span>
+            </div>
+          </div>
+        </div>
+        <label class="check-control">
+          <input id="curveTilt" type="checkbox" checked>
+          <span>导入曲线应用斜率</span>
+        </label>
+        <label class="check-control">
+          <input id="targetTilt" type="checkbox">
+          <span>目标曲线应用斜率</span>
+        </label>
+        <label class="check-control">
+          <input id="alignTarget" type="checkbox">
+          <span>对齐/归一化包含目标曲线</span>
+        </label>
+        <div class="sidebar-actions">
+          <button id="spreadCurves" type="button">纵向分布</button>
+          <button id="normalizeCurves" type="button">归一化</button>
+          <select id="alignFrequency" aria-label="对齐频点">
+            <option value="100">100 Hz</option>
+            <option value="250">250 Hz</option>
+            <option value="500">500 Hz</option>
+            <option value="1000" selected>1 kHz</option>
+            <option value="2000">2 kHz</option>
+            <option value="3000">3 kHz</option>
+            <option value="5000">5 kHz</option>
+            <option value="8000">8 kHz</option>
+            <option value="10000">10 kHz</option>
+          </select>
+          <button id="alignCurves" type="button">对齐</button>
+        </div>
+</details>
+        <div id="curveList" class="curve-list"></div>
+        <p class="hint">CSV 支持 <strong>frequency_hz, level_db</strong> 表头，也支持逗号、Tab、分号或空格分隔的两列数字。频率轴使用对数坐标。</p>
+
+        </div>
+        <div id="chartSettingsPanel" role="tabpanel" aria-labelledby="chartTab" hidden>
+        <label class="check-control">
+          <input id="bandIndicator" type="checkbox">
+          <span>频带指示</span>
+        </label>
+        <label class="sidebar-control compact-sidebar-control">
+          <span>图例字体大小（px）</span>
+          <div class="range-number-pair"><input id="legendSizeSlider" type="range" min="8" max="72" step="1" aria-label="图例字体大小滑块"><input id="legendSize" type="number" min="8" max="72" step="1" value="16" aria-label="图例字体像素"></div>
+        </label>
+        <label class="sidebar-control"><span>图例横线长度（px）</span><div class="range-number-pair"><input id="legendLineLengthSlider" type="range" min="8" max="160" step="1" aria-label="图例横线长度滑块"><input id="legendLineLength" type="number" min="8" max="160" value="28"></div></label>
+        <label class="sidebar-control"><span>图例横线粗细（px）</span><div class="range-number-pair"><input id="legendLineWidthSlider" type="range" min="0.5" max="12" step="0.5" aria-label="图例横线粗细滑块"><input id="legendLineWidth" type="number" min="0.5" max="12" step="0.5" value="2"></div></label>
+        <label class="sidebar-control"><span>图例位置</span>
+          <select id="legendPosition" aria-label="图例位置"><option value="top-left">左上</option><option value="top-right">右上</option><option value="bottom-left">左下</option><option value="bottom-right">右下</option></select>
+        </label>
+        <label class="sidebar-control"><span>图例文字颜色</span><select id="legendTextColor"><option value="black">黑色</option><option value="curve">跟随曲线颜色</option><option value="theme">跟随明暗主题</option></select></label>
+        <details id="axisSettings" open class="chart-settings-panel">
+          <summary>坐标范围与预设</summary>
+          <p class="settings-help">频响图：纵轴上下限同时留空为自动范围。</p>
+          <div class="axis-range-fields">
+            <label>频率下限（Hz）<input id="manualMinFreq" type="number" min="20" max="20000" value="20"></label>
+            <label>频率上限（Hz）<input id="manualMaxFreq" type="number" min="20" max="20000" value="20000"></label>
+            <label>纵轴下限（dB）<input id="manualMinDb" type="number" step="any" placeholder="自动"></label>
+            <label>纵轴上限（dB）<input id="manualMaxDb" type="number" step="any" placeholder="自动"></label>
+          </div>
+          <div class="settings-actions"><button id="applyAxisRange" type="button">应用范围</button><button id="captureAxisRange" type="button">读取当前范围</button><button id="autoAxisRange" type="button">恢复自动</button></div>
+          <label class="settings-full-field">预设名称<input id="axisPresetName" type="text" maxlength="64" placeholder="例如：耳机对比 60–120 dB"></label>
+          <button id="saveAxisPreset" type="button">保存 / 更新预设</button>
+          <select id="axisPresetSelect" aria-label="坐标预设"><option value="">选择坐标预设</option></select>
+          <div class="settings-actions"><button id="loadAxisPreset" type="button">应用预设</button><button id="deleteAxisPreset" type="button">删除预设</button></div>
+          <p id="axisSettingsStatus" class="settings-status" role="status" aria-live="polite"></p>
+        </details>
+
+        </div>
+      </aside>
+
+      <div class="workspace">
+        <section class="chart-panel">
+          <div class="chart-head">
+            <div>
+              <div id="chartTitle" class="chart-title">原始曲线</div>
+              <div id="chartSubtitle" class="chart-subtitle">20 Hz - 20 kHz / dB</div>
+            </div>
+          </div>
+          <div class="canvas-wrap is-zoom-hidden">
+            <div class="chart-zoom-control chart-zoom-y" title="纵坐标缩放">
+              <label class="zoom-end-top axis-bound-field"><input id="yZoomMaxLabel" class="axis-bound-input" type="number" step="any" aria-label="纵轴上限"><span id="yZoomMaxUnit">dB</span></label>
+              <input id="yZoomSlider" type="range" min="0" max="100" value="0" aria-label="纵坐标缩放">
+              <label class="zoom-end-bottom axis-bound-field"><input id="yZoomMinLabel" class="axis-bound-input" type="number" step="any" aria-label="纵轴下限"><span id="yZoomMinUnit">dB</span></label>
+              <span id="yZoomTip" class="zoom-tip zoom-tip-y" hidden></span>
+            </div>
+            <div class="chart-zoom-control chart-zoom-x" title="横坐标缩放">
+              <label class="axis-bound-field"><input id="xZoomMinLabel" class="axis-bound-input" type="number" min="20" max="20000" step="any" value="20" aria-label="横轴下限 Hz"><span>Hz</span></label>
+              <div class="dual-range">
+                <div id="xRangeTrack" class="dual-range-track"></div>
+                <input id="xMinSlider" type="range" min="0" max="10000" value="0" aria-label="横坐标下限">
+                <input id="xMaxSlider" type="range" min="0" max="10000" value="10000" aria-label="横坐标上限">
+              </div>
+              <label class="axis-bound-field"><input id="xZoomMaxLabel" class="axis-bound-input" type="number" min="20" max="20000" step="any" value="20000" aria-label="横轴上限 Hz"><span>Hz</span></label>
+              <span id="xZoomTip" class="zoom-tip zoom-tip-x" hidden></span>
+            </div>
+            <div class="chart-band-controls" aria-label="频段缩放范围">
+              <button type="button" data-band-range="20,80">1 Sub Bass</button>
+              <button type="button" data-band-range="80,300">2 Bass</button>
+              <button type="button" data-band-range="300,2000">3 Mid</button>
+              <button type="button" data-band-range="2000,6000">4 High-mid</button>
+              <button type="button" data-band-range="6000,20000">5 High</button>
+            </div>
+            <button id="zoomControlsToggle" class="chart-zoom-toggle" type="button" title="显示缩放控件" aria-label="显示缩放控件" aria-pressed="false">
+              <span class="font-icon" aria-hidden="true">&#8981;</span>
+            </button>
+            <button id="resetAxisView" class="chart-reset-button" type="button" title="复位图表缩放" aria-label="复位图表缩放">
+              <span class="font-icon" aria-hidden="true">&#8634;</span>
+            </button>
+            <canvas id="chart"></canvas>
+            <div id="bandIndicatorOverlay" class="band-indicator-overlay" hidden></div>
+            <div id="chartTooltip" class="chart-tooltip" hidden></div>
+            <div id="emptyState" class="empty-state">拖入 CSV/TXT 文件或点击上方按钮导入曲线。若需要导入目标曲线，请点击上方“导入目标”按钮。</div>
+          </div>
+        </section>
+
+        <section class="metrics">
+          <p class="panel-title">偏差摘要</p>
+          <div class="metric-grid">
+            <div class="metric">
+              <div class="metric-label">平均绝对偏差</div>
+              <div id="avgDeviation" class="metric-value">-</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">最大绝对偏差</div>
+              <div id="maxDeviation" class="metric-value">-</div>
+            </div>
+            <div id="metricAnimationStage" class="metric-animation-stage" aria-hidden="true"></div>
+            <div class="metric">
+              <div class="metric-label">超低频 20-80 Hz</div>
+              <div id="subBassDeviation" class="metric-value">-</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">低频 80-300 Hz</div>
+              <div id="bassDeviation" class="metric-value">-</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">中频 300-2000 Hz</div>
+              <div id="midDeviation" class="metric-value">-</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">中高频 2k-6k Hz</div>
+              <div id="highMidDeviation" class="metric-value">-</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">高频 6k-20k Hz</div>
+              <div id="highDeviation" class="metric-value">-</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <div class="footer-copy">
+        <span>&copy; 2026 FreqDig. All rights reserved by Diggercat.</span>
+        <span>Powered by DiggerEngine</span>
+      </div>
+      <button id="easterEggToggle" class="easter-egg-toggle is-active" type="button" title="Toggle easter egg" aria-label="Toggle easter egg" aria-pressed="true">
+        <span class="font-icon" aria-hidden="true">&#10022;</span>
+      </button>
+      <button id="appSettingsToggle" class="footer-settings-toggle" type="button" title="设置" aria-label="设置" hidden>
+        <span class="font-icon" aria-hidden="true">&#9881;</span>
+      </button>
+      <form id="appSettingsPanel" class="footer-settings-panel" hidden>
+        <label>
+          <span>水印内容</span>
+          <input id="watermarkSetting" type="text" placeholder="留空则不显示水印">
+        </label>
+        <label>
+          <span>测量器型号</span>
+          <input id="measurementSetting" type="text" placeholder="留空则不显示右上角文字">
+        </label>
+        <label>
+          <span>彩蛋触发几率 (%)</span>
+          <input id="easterTriggerSetting" type="number" min="0" max="100" step="1">
+        </label>
+        <label>
+          <span>彩蛋爆发几率 (%)</span>
+          <input id="easterBurstSetting" type="number" min="0" max="100" step="1">
+        </label>
+        <label class="settings-check">
+          <span>矿车小猫动画</span>
+          <input id="mineCartAnimationSetting" type="checkbox">
+        </label>
+        <label class="settings-check">
+          <span>暗色模式</span>
+          <input id="themeSetting" type="checkbox">
+        </label>
+        <div class="settings-actions">
+          <button type="button" id="appSettingsCancel">取消</button>
+          <button type="submit" class="primary">保存</button>
+        </div>
+      </form>
+    </footer>
+  </div>
+</body>
+</html>
+
